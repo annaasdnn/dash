@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Dashboard</title>
+<style>
+:root {
+  --bg: #FFF9F0;
+  --card: #FFFFFF;
+  --border: #F0E6D8;
+  --green: #1B8A5A;
+  --green-light: #27AE6B;
+  --pink: #E8637A;
+  --pink-light: #FDE8EC;
+  --orange: #E8943A;
+  --orange-light: #FFF0E0;
+  --purple: #7C6FD4;
+  --purple-light: #EDEAFF;
+  --blue: #4A90D9;
+  --blue-light: #E8F1FC;
+  --text: #2D2A24;
+  --muted: #8C857A;
+  --light-muted: #B8B0A2;
+  --cream-dark: #F0E6D8;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 4px 20px rgba(0,0,0,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-weight:500}
+
+.header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:white;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;box-shadow:0 1px 8px rgba(0,0,0,0.04);flex-wrap:wrap;gap:10px}
+.header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.filters{display:flex;gap:6px}
+.fbtn{padding:7px 16px;border:2px solid var(--border);border-radius:20px;background:white;color:var(--muted);cursor:pointer;font-size:12px;font-family:inherit;font-weight:700;transition:all .2s}
+.fbtn.active{background:var(--green);border-color:var(--green);color:white}
+.fbtn:hover:not(.active){border-color:var(--green);color:var(--green)}
+
+.date-filter{display:flex;align-items:center;gap:10px;margin:14px 24px 0;flex-wrap:wrap}
+.date-filter label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px}
+.date-filter input{background:white;border:2px solid var(--border);border-radius:10px;color:var(--text);padding:7px 14px;font-size:13px;font-family:inherit;font-weight:600}
+.date-filter input:focus{border-color:var(--green);outline:none}
+.date-filter button{padding:7px 16px;border:none;border-radius:10px;background:var(--green);color:white;cursor:pointer;font-size:12px;font-family:inherit;font-weight:700}
+
+.page{max-width:1200px;margin:0 auto;padding:16px}
+.section-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin:24px 0 12px 4px;font-weight:800}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow);transition:box-shadow .2s}
+.kpi:hover{box-shadow:var(--shadow-hover)}
+.kpi-icon{font-size:22px;margin-bottom:4px}
+.kpi-value{font-size:24px;font-weight:900;line-height:1.2}
+.kpi-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:2px}
+.kpi-sub{font-size:9px;color:var(--light-muted);font-weight:600;margin-top:2px}
+
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row-1-2{display:grid;grid-template-columns:1fr 2fr;gap:12px}
+@media(max-width:700px){.row-3,.row-2,.row-1-2,.kpi-strip{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--shadow-hover)}
+.card-title{font-size:10px;color:var(--light-muted);text-transform:uppercase;letter-spacing:1.5px;text-align:center;margin-bottom:10px;font-weight:800}
+
+.big{font-size:38px;font-weight:900;text-align:center;line-height:1.1}
+.mid{font-size:24px;font-weight:800}
+.sm{font-size:11px;color:var(--muted);font-weight:600}
+.xs{font-size:9px;color:var(--light-muted);font-weight:600}
+.center{text-align:center}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.flex-around{display:flex;justify-content:space-around}
+.flex-between{display:flex;justify-content:space-between}
+
+.bar-bg{height:5px;background:var(--cream-dark);border-radius:3px;margin-top:5px;overflow:hidden}
+.bar{height:100%;border-radius:3px}
+
+.hab{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;font-weight:600}
+.hab:last-child{border-bottom:none}
+.hab-icon{font-size:22px;width:28px;text-align:center}
+.hab-lbl{font-size:10px;color:var(--light-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+.hab-val{font-weight:800;font-size:16px}
+
+.meal{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-weight:600}
+.meal:last-of-type{border-bottom:none}
+.meal-icon{font-size:16px}
+.meal-name{font-size:13px;font-weight:700;color:var(--text)}
+.meal-meta{font-size:10px;color:var(--light-muted);font-weight:600}
+.meal-kcal{font-size:13px;font-weight:800;color:var(--green);margin-left:auto;white-space:nowrap}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:280px;margin:0 auto}
+.cal-header{font-size:9px;color:var(--light-muted);text-align:center;font-weight:800;padding:2px 0}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;transition:transform .15s}
+.cal-cell:not(.cal-empty):hover{transform:scale(1.15)}
+.cal-empty{background:transparent}
+
+.dots{letter-spacing:5px;font-size:18px;margin-top:6px}
+.legend{display:flex;justify-content:center;gap:10px;margin-top:8px;font-size:10px;color:var(--light-muted);font-weight:600}
+.leg-box{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin-right:3px}
+
+.coffee-row{display:flex;justify-content:center;gap:4px;margin:8px 0}
+.coffee-cup{font-size:26px;transition:all .3s}
+.coffee-cup.empty{opacity:0.12;filter:grayscale(1)}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;margin-left:4px}
+.tag-fuzzy{background:var(--orange-light);color:var(--orange)}
+.tag-manual{background:var(--purple-light);color:var(--purple)}
+
+/* Finance */
+.fin-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-weight:600}
+.fin-row:last-of-type{border-bottom:none}
+.fin-cat-badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:9px;font-weight:700;white-space:nowrap}
+.fin-amount{font-size:14px;font-weight:800;margin-left:auto;white-space:nowrap}
+.fin-desc{font-size:12px;font-weight:600;color:var(--text)}
+.fin-bar{display:flex;border-radius:6px;overflow:hidden;height:8px;margin-top:6px}
+
+/* Tooltips */
+.tooltip-wrap { position: relative; cursor: help; }
+.tooltip-wrap .tooltip {
+  visibility: hidden; opacity: 0;
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%); z-index: 100;
+  background: #2D2A24; color: #FFF9F0;
+  padding: 8px 14px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+  white-space: nowrap; pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: opacity .2s, visibility .2s;
+}
+.tooltip-wrap .tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: #2D2A24;
+}
+.tooltip-wrap:hover .tooltip { visibility: visible; opacity: 1; }
+
+.loading{text-align:center;color:var(--light-muted);padding:60px 20px;font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Health & Finance</h1>
+  <div class="filters">
+    <button class="fbtn active" onclick="setFilter('all')">Все</button>
+    <button class="fbtn" onclick="setFilter('Коля')">Коля</button>
+    <button class="fbtn" onclick="setFilter('Аня')">Аня</button>
+  </div>
+</div>
+<div class="date-filter">
+  <label>📅</label>
+  <input type="date" id="dateInput">
+  <button onclick="setDateToday()">Сегодня</button>
+</div>
+<div class="page" id="app"><div class="loading">Загрузка…</div></div>
+
+<script>
+const URLS = {
+  weight: 'https://docs.google.com/spreadsheets/d/1feIqfXQHQ_ukq1Eon7aJ_FZ1_-JVfEyU2hVL6UduvgA/export?format=csv&gid=41946739',
+  habits: 'https://docs.google.com/spreadsheets/d/1oS3GUOiR1ifMJwwnNRowBB29NAHKOo_y1PchmeGpuYM/export?format=csv&gid=860111203',
+  meals:  'https://docs.google.com/spreadsheets/d/1FFvdWKoiRLKspCe1vELmMC0lwpI3wkS8w-c-hWhXTMw/export?format=csv&gid=927239233',
+  kbju:   'https://docs.google.com/spreadsheets/d/1Ck7j5lRkfXg5VnBrPWqZjA4zqzYywkhlWSkRX3i5KJU/export?format=csv&gid=0',
+  finance:'https://docs.google.com/spreadsheets/d/1KfJmOvte67hprgf4h3P-O8UyINKz4XjQEx6b8SmU_wk/export?format=csv&gid=2103534362'
+};
+
+
+const GOALS_MAP={
+  'Аня':{kcal:1450,prot:110,fat:48,carb:144,water:2000,sleep:8},
+  'Коля':{kcal:2400,prot:165,fat:80,carb:255,water:2500,sleep:8}
+};
+const GOALS_DEF={kcal:2000,prot:120,fat:70,carb:250,water:2500,sleep:8};
+function getGoals(){return(filter!=='all'&&GOALS_MAP[filter])||GOALS_DEF}
+
+const COFFEE_WORDS=['кофе','капучино','латте','флэт уайт','флет уайт','flat white','раф','американо','эспрессо'];
+const STOP_WORDS=new Set(['с','и','на','в','из','без','по','для','от','до','за','под','над','к','о','об']);
+
+const COMPOSITE_DISHES={
+  'бутерброд с маслом':{kcal:332,prot:6.5,fat:16,carb:40},
+  'бутерброд с сыром':{kcal:340,prot:12,fat:15,carb:38},
+  'бутерброд с колбасой':{kcal:330,prot:11,fat:14,carb:37},
+  'хлеб с маслом':{kcal:332,prot:6.5,fat:16,carb:40},
+  'хлеб с сыром':{kcal:340,prot:12,fat:15,carb:38},
+  'тост с маслом':{kcal:315,prot:6,fat:14,carb:42},
+  'тост с сыром':{kcal:340,prot:12,fat:15,carb:38},
+  'каша с маслом':{kcal:130,prot:3.5,fat:4,carb:18},
+  'яичница с беконом':{kcal:340,prot:18,fat:28,carb:1},
+  'макароны с сыром':{kcal:260,prot:10,fat:12,carb:28},
+  'макароны с курицей':{kcal:180,prot:14,fat:4,carb:22},
+  'рис с курицей':{kcal:170,prot:13,fat:3,carb:23},
+  'гречка с курицей':{kcal:155,prot:14,fat:2.5,carb:18},
+  'гречка с мясом':{kcal:160,prot:11,fat:5,carb:18},
+  'рис с овощами':{kcal:130,prot:2.5,fat:2,carb:25},
+  'кофе с молоком':{kcal:52,prot:1.8,fat:1.8,carb:6},
+  'кофе с сахаром':{kcal:50,prot:0,fat:0,carb:12},
+  'творог с медом':{kcal:165,prot:14,fat:4,carb:20},
+  'овсянка на молоке':{kcal:110,prot:4,fat:3.5,carb:17}
+};
+
+const SYNONYMS={
+  'греча':'гречка','гречка':'гречка','овсянка':'овсянка','геркулес':'овсянка',
+  'рис':'рис','макароны':'макароны','паста':'макароны','спагетти':'макароны',
+  'курица':'курица','курочка':'курица','индейка':'индейка','говядина':'говядина',
+  'свинина':'свинина','сосиски':'сосиски','колбаса':'колбаса',
+  'семга':'семга','лосось':'семга','треска':'треска','минтай':'минтай',
+  'тунец':'тунец','креветки':'креветки','селедка':'сельдь',
+  'творог':'творог','молоко':'молоко','кефир':'кефир','йогурт':'йогурт',
+  'сыр':'сыр','сметана':'сметана','яйцо':'яйцо куриное','яйца':'яйцо куриное',
+  'картошка':'картошка','помидор':'помидор','огурец':'огурец','капуста':'капуста',
+  'морковь':'морковь','яблоко':'яблоко','банан':'банан','хлеб':'хлеб',
+  'шоколад':'шоколад','сахар':'сахар','мед':'мед',
+  'кофе':'кофе','чай':'чай','пиво':'пиво','вино':'вино','водка':'водка'
+};
+
+const CAT_COLORS={
+  'Продукты':{color:'#1B8A5A',bg:'#E8F5E9',icon:'🛒'},
+  'Еда вне дома':{color:'#E8943A',bg:'#FFF0E0',icon:'🍽️'},
+  'Кафе':{color:'#E8943A',bg:'#FFF0E0',icon:'☕'},
+  'Транспорт':{color:'#4A90D9',bg:'#E8F1FC',icon:'🚕'},
+  'Дом':{color:'#7C6FD4',bg:'#EDEAFF',icon:'🏠'},
+  'Одежда':{color:'#E8637A',bg:'#FDE8EC',icon:'👗'},
+  'Здоровье':{color:'#1B8A5A',bg:'#E8F5E9',icon:'💊'},
+  'Спорт':{color:'#27AE6B',bg:'#E8F5E9',icon:'🏋️'},
+  'Подписки':{color:'#4A90D9',bg:'#E8F1FC',icon:'📱'},
+  'Развлечения':{color:'#E8943A',bg:'#FFF0E0',icon:'🎉'},
+  'Образование':{color:'#7C6FD4',bg:'#EDEAFF',icon:'📚'},
+  'Питомцы':{color:'#E8943A',bg:'#FFF0E0',icon:'🐱'},
+  'Красота':{color:'#E8637A',bg:'#FDE8EC',icon:'💅'},
+  'Связь':{color:'#4A90D9',bg:'#E8F1FC',icon:'📞'},
+  'Подарки':{color:'#E8943A',bg:'#FFF0E0',icon:'🎁'}
+};
+const CAT_DEFAULT={color:'#8C857A',bg:'#F5F0E8',icon:'💰'};
+
+function getCatStyle(cat){
+  const c=(cat||'').trim();
+  if(CAT_COLORS[c])return CAT_COLORS[c];
+  for(const[k,v]of Object.entries(CAT_COLORS)){
+    if(c.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(c.toLowerCase()))return v;
+  }
+  return CAT_DEFAULT;
+}
+
+let RAW={},filter='all',selectedDate=null,expandedCat=null;
+
+// ══════════════════════════════════════
+// CSV
+// ══════════════════════════════════════
+function csvParse(t){
+  const l=t.split('\n').filter(l=>l.trim());
+  if(l.length<2)return[];
+  const h=csvLine(l[0]);
+  return l.slice(1).map(r=>{
+    const v=csvLine(r);const o={};
+    h.forEach((k,i)=>o[k.trim()]=(v[i]||'').trim());
+    return o;
+  });
+}
+function csvLine(l){
+  const r=[];let c='',q=false;
+  for(let i=0;i<l.length;i++){
+    const ch=l[i];
+    if(ch==='"')q=!q;
+    else if(ch===','&&!q){r.push(c);c=''}
+    else c+=ch;
+  }
+  r.push(c);return r;
+}
+function num(v){
+  if(!v||v==='')return null;
+  const n=parseFloat(String(v).replace(',','.').replace(/[^0-9.\-]/g,''));
+  return isNaN(n)?null:n;
+}
+function pDate(v){
+  if(!v)return null;
+  let m=v.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  m=v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=v.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return new Date(+m[3],+m[1]-1,+m[2]);
+  return null;
+}
+function getDate(r,d,t){return pDate(r[d])||pDate(r[t])}
+function fmt(n,d=1){return n==null?'—':n.toFixed(d)}
+function fmtD(d){
+  if(!d)return'—';
+  return d.getDate().toString().padStart(2,'0')+'.'+(d.getMonth()+1).toString().padStart(2,'0')+'.'+d.getFullYear();
+}
+function fmtISO(d){
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+}
+function fmtMoney(n){return n.toLocaleString('ru-RU')}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function sameDay(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+function sameMonth(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()}
+function normalize(s){return(s||'').toLowerCase().trim().replace(/ё/g,'е').replace(/\s+/g,' ')}
+function meaningfulWords(s){return s.split(' ').filter(w=>w.length>1&&!STOP_WORDS.has(w))}
+function isCompositeDish(i){return i.split(' ').some(x=>STOP_WORDS.has(x))&&meaningfulWords(i).length>=2}
+function cGBP(g,o){return g?'#1B8A5A':o?'#E8943A':'#E8637A'}
+function cVal(p){return p>=.9?'#1B8A5A':p>=.5?'#27AE6B':'#B8B0A2'}
+function isCoffee(p){return COFFEE_WORDS.some(w=>normalize(p).includes(w))}
+
+// ══════════════════════════════════════
+// FUZZY
+// ══════════════════════════════════════
+function levenshtein(a,b){
+  const m=a.length,n=b.length;if(!m)return n;if(!n)return m;
+  const d=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)d[i][0]=i;
+  for(let j=0;j<=n;j++)d[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
+    d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  }
+  return d[m][n];
+}
+function wordCoverage(i,r){
+  const iw=meaningfulWords(i),rw=meaningfulWords(r);
+  if(!iw.length)return 0;
+  let m=0;
+  for(const w of iw)if(rw.some(x=>x.includes(w)||w.includes(x)||levenshtein(w,x)<=1))m++;
+  return m/iw.length;
+}
+function findInKBJU(raw,km){
+  const i=normalize(raw);if(!i)return null;
+  if(km[i])return{...km[i],mt:'exact',mto:i};
+  if(COMPOSITE_DISHES[i])return{...COMPOSITE_DISHES[i],mt:'dish',mto:i};
+  for(const[d,v]of Object.entries(COMPOSITE_DISHES)){
+    if(wordCoverage(i,d)>=.8||wordCoverage(d,i)>=.8)return{...v,mt:'dish',mto:d};
+  }
+  if(isCompositeDish(i)){
+    for(const[s,t]of Object.entries(SYNONYMS)){
+      if(i===s){const tn=normalize(t);
+        if(km[tn])return{...km[tn],mt:'synonym',mto:tn};
+        for(const k of Object.keys(km))if(k.includes(tn)||tn.includes(k))return{...km[k],mt:'synonym',mto:k};
+      }
+    }
+    return null;
+  }
+  for(const[s,t]of Object.entries(SYNONYMS)){
+    if(i===s){const tn=normalize(t);
+      if(km[tn])return{...km[tn],mt:'synonym',mto:tn};
+      for(const k of Object.keys(km))if(k.includes(tn)||tn.includes(k))return{...km[k],mt:'synonym',mto:k};
+    }
+  }
+  for(const k of Object.keys(km)){
+    const lr=Math.min(i.length,k.length)/Math.max(i.length,k.length);
+    if(lr>=.5&&(k.includes(i)||i.includes(k)))return{...km[k],mt:'contains',mto:k};
+  }
+  let bk=null,bc=0;
+  for(const k of Object.keys(km)){const c=wordCoverage(i,k);if(c>bc&&c>=.7){bc=c;bk=k}}
+  if(bk)return{...km[bk],mt:'words',mto:bk};
+  const iw=meaningfulWords(i);
+  if(iw.length<=2){
+    let bk2=null,bd=Infinity;
+    for(const k of Object.keys(km)){
+      for(const w of iw){if(w.length<4)continue;
+        for(const kw of meaningfulWords(k)){if(kw.length<4)continue;
+          const d=levenshtein(w,kw);
+          if(d<=Math.floor(Math.min(w.length,kw.length)*.25)&&d<bd){bd=d;bk2=k}
+        }
+      }
+    }
+    if(bk2)return{...km[bk2],mt:'fuzzy',mto:bk2};
+  }
+  return null;
+}
+
+// ══════════════════════════════════════
+// UI
+// ══════════════════════════════════════
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll('.fbtn').forEach(b=>
+    b.classList.toggle('active',b.textContent.trim()===f||(f==='all'&&b.textContent.trim()==='Все'))
+  );
+  render();
+}
+function fp(a,c){return filter==='all'||!c?a:a.filter(r=>r[c]===filter)}
+function setDateToday(){
+  document.getElementById('dateInput').value=fmtISO(new Date());
+  selectedDate=new Date();
+  render();
+}
+function onDateChange(){
+  const v=document.getElementById('dateInput').value;
+  selectedDate=v?new Date(v):null;
+  render();
+}
+function toggleCat(cat){
+  expandedCat=expandedCat===cat?null:cat;
+  render();
+}
+
+// ══════════════════════════════════════
+// TOOLTIP HELPER
+// ══════════════════════════════════════
+function tip(value, goal, unit, moreIsBetter) {
+  if (moreIsBetter === undefined) moreIsBetter = true;
+  if (goal == null || value == null) return '';
+  const diff = goal - value;
+  const pct = Math.round(value / goal * 100);
+  let text, color;
+  if (moreIsBetter) {
+    if (diff > 0.05) { text = 'Ещё ' + fmt(diff) + ' ' + unit + ' до нормы'; color = '#E8943A'; }
+    else if (diff >= -0.05) { text = 'Норма достигнута ✓'; color = '#1B8A5A'; }
+    else { text = 'Превышено на ' + fmt(Math.abs(diff)) + ' ' + unit; color = '#E8637A'; }
+  } else {
+    if (diff > 0.05) { text = 'Ниже нормы на ' + fmt(diff) + ' ' + unit; color = '#1B8A5A'; }
+    else if (diff >= -0.05) { text = 'На уровне нормы'; color = '#E8943A'; }
+    else { text = 'Превышено на ' + fmt(Math.abs(diff)) + ' ' + unit; color = '#E8637A'; }
+  }
+  return '<span class="tooltip" style="color:' + color + '">' + text + ' (' + pct + '%)</span>';
+}
+
+// ══════════════════════════════════════
+// LOAD
+// ══════════════════════════════════════
+async function load(){
+  try{
+    const fetchSafe=async(url)=>{
+      try{const r=await fetch(url);if(!r.ok)return'';return await r.text()}
+      catch(e){console.warn('Не загрузилось:',url);return''}
+    };
+    const[a,b,c,d,e]=await Promise.all([
+      fetchSafe(URLS.weight),fetchSafe(URLS.habits),fetchSafe(URLS.meals),
+      fetchSafe(URLS.kbju),fetchSafe(URLS.finance)
+    ]);
+    RAW.weight=a?csvParse(a):[];
+    RAW.habits=b?csvParse(b):[];
+    RAW.meals=c?csvParse(c):[];
+    RAW.kbju=d?csvParse(d):[];
+    RAW.finance=e?csvParse(e):[];
+    console.log('Loaded:',{w:RAW.weight.length,h:RAW.habits.length,m:RAW.meals.length,k:RAW.kbju.length,f:RAW.finance.length});
+    if(RAW.finance.length)console.log('Finance cols:',Object.keys(RAW.finance[0]));
+    document.getElementById('dateInput').value=fmtISO(new Date());
+    selectedDate=new Date();
+    document.getElementById('dateInput').addEventListener('change',onDateChange);
+    render();
+  }catch(e){
+    document.getElementById('app').innerHTML='<div class="loading">Ошибка: '+e.message+'</div>';
+    console.error(e);
+  }
+}
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function render(){
+  const vd=selectedDate||new Date();
+  const G=getGoals();
+  const now=new Date();
+
+  // ── PARSE ALL DATA ──
+  const W=fp(RAW.weight,'Кто заполняет').map(r=>({
+    date:getDate(r,'Дата','Отметка времени'),
+    w:num(r['Вес']),
+    mood:num(r['Самочувствие']),
+    energy:num(r['Энергичность'])
+  })).filter(r=>r.date&&r.w!=null).sort((a,b)=>a.date-b.date);
+
+  const H=fp(RAW.habits,'Кто заполняет').map(r=>{
+    let sv=null;const rs=(r['сон']||'').trim();
+    if(rs)sv=num(rs.replace('+','').replace('-',''));
+    return{
+      date:getDate(r,'Дата','Отметка времени'),
+      water:num(r['Вода, мл']),sleep:sv,
+      train:(r['Тренировка']||'').trim(),
+      trainMin:num(r['Время тренировки, мин']),
+      alco:(r['Алкоголь']||'').trim(),
+      cigs:(r['Сигареты (штук)']||'').trim(),
+      stress:num(r['Стресс']),
+      day:num(r['оценка дня']),
+      mag:(r['Магний']||'').trim()
+    };
+  }).filter(r=>r.date).sort((a,b)=>a.date-b.date);
+
+  const KM={};
+  RAW.kbju.forEach(r=>{
+    const n=normalize(r['ПродуктНорм']);
+    if(n)KM[n]={kcal:num(r['Ккал']),prot:num(r['Белки']),fat:num(r['Жиры']),carb:num(r['Углеводы'])};
+  });
+
+  const M=fp(RAW.meals,'Кто заполняет?').map(r=>{
+    const p=(r['Продукт']||'').trim();
+    const g=num(r['Грамм']);
+    const mk=num(r['ккал']||r['Ккал']||'');
+    const match=findInKBJU(p,KM);
+    let kcal,prot,fat,carb,found,mt,mto;
+    if(mk!=null){kcal=Math.round(mk);prot=null;fat=null;carb=null;found=true;mto='ручной';mt='manual'}
+    else if(match){
+      kcal=match.kcal!=null&&g?Math.round(match.kcal*g/100):null;
+      prot=match.prot!=null&&g?match.prot*g/100:null;
+      fat=match.fat!=null&&g?match.fat*g/100:null;
+      carb=match.carb!=null&&g?match.carb*g/100:null;
+      found=true;mto=match.mto;mt=match.mt;
+    }else{kcal=null;prot=null;fat=null;carb=null;found=false;mto=null;mt=null}
+    return{date:getDate(r,'Дата','Отметка времени'),meal:(r['Прием пищи']||'').trim(),
+      prod:p,g,kcal,prot,fat,carb,found,mto,mt,isCoffee:isCoffee(p)};
+  }).filter(r=>r.date&&r.prod).sort((a,b)=>a.date-b.date);
+
+  // Finance
+  const f0=RAW.finance[0]||{};
+  const fWho=Object.keys(f0).find(k=>k.includes('Кто')||k.includes('заполн'))||'';
+  const fSum=Object.keys(f0).find(k=>k.toLowerCase().includes('сумма'))||'';
+  const fDesc=Object.keys(f0).find(k=>k.toLowerCase().includes('на что')||k.toLowerCase().includes('описание'))||'';
+  const fCat=Object.keys(f0).find(k=>k.toLowerCase().includes('категория')||k.toLowerCase().includes('категори'))||'';
+
+  const F=fp(RAW.finance,fWho).map(r=>({
+    date:getDate(r,'Дата','Отметка времени'),
+    amount:num(r[fSum]),
+    desc:(r[fDesc]||'').trim(),
+    cat:(r[fCat]||'Другое').trim()
+  })).filter(r=>r.date&&r.amount!=null).sort((a,b)=>a.date-b.date);
+
+  // ── CALCULATIONS ──
+  const ago7=new Date(now-7*864e5);
+  const ago28=new Date(now-28*864e5);
+  const wL=W[W.length-1],wF=W[0];
+  const wW=[...W].reverse().find(r=>r.date<=ago7);
+  const dT=wL&&wF?(wF.w-wL.w):0;
+
+  const w7=W.filter(r=>r.date>=ago7);
+  const mA=w7.filter(r=>r.mood!=null);
+  const eA=w7.filter(r=>r.energy!=null);
+  const mAvg=mA.length?mA.reduce((s,r)=>s+r.mood,0)/mA.length:0;
+  const eAvg=eA.length?eA.reduce((s,r)=>s+r.energy,0)/eA.length:0;
+
+  const h7=H.filter(r=>r.date>=ago7);
+  const avgWater=h7.length?h7.reduce((s,r)=>s+(r.water||0),0)/h7.length:0;
+  const sNums=h7.map(r=>r.sleep).filter(n=>n!=null);
+  const avgSleep=sNums.length?sNums.reduce((s,n)=>s+n,0)/sNums.length:0;
+
+  const aTD=new Set(H.filter(r=>r.train==='Да').map(r=>r.date.toDateString()));
+  const tCnt=H.filter(r=>r.date>=ago28&&r.train==='Да').map(r=>r.date.toDateString()).filter((v,i,a)=>a.indexOf(v)===i).length;
+  const trainMins7=h7.filter(r=>r.trainMin!=null);
+  const avgTrainMin=trainMins7.length?trainMins7.reduce((s,r)=>s+r.trainMin,0)/trainMins7.length:0;
+
+  const lAlco=[...H].reverse().find(r=>r.alco==='Да');
+  const noAlco=lAlco?Math.floor((now-lAlco.date)/864e5):(H.length?Math.floor((now-H[0].date)/864e5):0);
+  const cigN=h7.map(r=>num((r.cigs||'0').replace('+',''))).filter(n=>n!=null);
+  const avgCig=cigN.length?cigN.reduce((s,n)=>s+n,0)/cigN.length:0;
+
+  const hDay=H.find(r=>sameDay(r.date,vd));
+  const stress=hDay?hDay.stress||0:0;
+  const dayScore=hDay?hDay.day||0:0;
+  const magOk=hDay&&hDay.mag&&hDay.mag!=='Нет';
+  let magStreak=0;
+  for(let i=H.length-1;i>=0;i--){if(H[i].mag&&H[i].mag!=='Нет')magStreak++;else break}
+  const todayTrainMin=hDay?hDay.trainMin:null;
+
+  const dM=M.filter(r=>sameDay(r.date,vd));
+  const tK=dM.reduce((s,r)=>s+(r.kcal||0),0);
+  const tP=dM.reduce((s,r)=>s+(r.prot||0),0);
+  const tF=dM.reduce((s,r)=>s+(r.fat||0),0);
+  const tCb=dM.reduce((s,r)=>s+(r.carb||0),0);
+  const miss=[...new Set(dM.filter(r=>!r.found).map(r=>r.prod))].filter(Boolean);
+  const cc=dM.filter(r=>r.isCoffee).length;
+  const mealTypes=new Set(dM.map(r=>r.meal).filter(Boolean));
+
+  const dayF=F.filter(r=>sameDay(r.date,vd));
+  const dayFTotal=dayF.reduce((s,r)=>s+r.amount,0);
+  const monthF=F.filter(r=>sameMonth(r.date,vd));
+  const monthFTotal=monthF.reduce((s,r)=>s+r.amount,0);
+  const catTotals={};
+  monthF.forEach(r=>{catTotals[r.cat]=(catTotals[r.cat]||0)+r.amount});
+  const catSorted=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const calPct=G.kcal?Math.round(tK/G.kcal*100):0;
+
+  // ══════════════════════════════════════
+  // BUILD HTML
+  // ══════════════════════════════════════
+  let h='';
+
+  // ── KPI STRIP ──
+  h+=`<div class="kpi-strip">
+    <div class="kpi"><div class="kpi-icon">⚖️</div>
+      <div class="kpi-value" style="color:${wL?(dT>0?'#1B8A5A':'#E8637A'):'#8C857A'}">${wL?fmt(wL.w):'—'}</div>
+      <div class="kpi-label">Вес</div>
+      ${wL?`<div class="kpi-sub">${dT>0?'↓':'↑'}${fmt(Math.abs(dT))}</div>`:''}</div>
+
+    <div class="kpi tooltip-wrap"><div class="kpi-icon">🔥</div>
+      <div class="kpi-value" style="color:${cVal(calPct/100)}">${tK}</div>
+      <div class="kpi-label">Ккал</div><div class="kpi-sub">${calPct}%</div>
+      ${tip(tK,G.kcal,'ккал',false)}</div>
+
+    <div class="kpi tooltip-wrap"><div class="kpi-icon">😊</div>
+      <div class="kpi-value" style="color:${cVal(mAvg/5)}">${fmt(mAvg)}</div>
+      <div class="kpi-label">Настроение</div><div class="kpi-sub">7д</div>
+      ${tip(mAvg,5,'баллов',true)}</div>
+
+    <div class="kpi tooltip-wrap"><div class="kpi-icon">😴</div>
+      <div class="kpi-value" style="color:${cGBP(avgSleep>=7,avgSleep>=6)}">${fmt(avgSleep)}</div>
+      <div class="kpi-label">Сон</div><div class="kpi-sub">7д</div>
+      ${tip(avgSleep,G.sleep,'ч',true)}</div>
+
+    <div class="kpi tooltip-wrap"><div class="kpi-icon">🏋️</div>
+      <div class="kpi-value" style="color:${cGBP(tCnt>=12,tCnt>=8)}">${tCnt}</div>
+      <div class="kpi-label">Тренировки</div><div class="kpi-sub">${Math.round(avgTrainMin)} мин/тр</div>
+      ${tip(tCnt,12,'дней',true)}</div>
+
+    <div class="kpi tooltip-wrap"><div class="kpi-icon">💧</div>
+      <div class="kpi-value" style="color:${cGBP(avgWater>=G.water*.8,avgWater>=G.water*.6)}">${Math.round(avgWater)}</div>
+      <div class="kpi-label">Вода</div><div class="kpi-sub">7д</div>
+      ${tip(avgWater,G.water,'мл',true)}</div>
+
+    <div class="kpi"><div class="kpi-icon">💰</div>
+      <div class="kpi-value">${fmtMoney(Math.round(dayFTotal))}</div>
+      <div class="kpi-label">₽ сегодня</div><div class="kpi-sub">мес: ${fmtMoney(Math.round(monthFTotal))}</div></div>
+  </div>`;
+
+  // ── ТЕЛО ──
+  h+=`<div class="section-title">⚖️ Тело</div><div class="row-3">`;
+
+  if(wL){
+    const cT=dT>0?'#1B8A5A':dT<0?'#E8637A':'#8C857A';
+    const dWk=(wW?.w||wL.w)-wL.w;
+    const cW=dWk>0?'#1B8A5A':dWk<0?'#E8637A':'#8C857A';
+    h+=`<div class="card"><div class="card-title">Вес</div>
+      <div class="big" style="color:${cT}">${fmt(wL.w)}<span style="font-size:16px;color:#8C857A"> кг</span></div>
+      <div class="divider"></div>
+      <div class="flex-around" style="font-size:14px">
+        <div class="center"><div style="font-weight:800;color:${cT}">${dT>0?'↓':'↑'}${fmt(Math.abs(dT))}</div><div class="xs">старт</div></div>
+        <div class="center"><div style="font-weight:800;color:${cW}">${dWk>0?'↓':'↑'}${fmt(Math.abs(dWk))}</div><div class="xs">7 дн</div></div>
+      </div></div>`;
+  }else{
+    h+=`<div class="card"><div class="card-title">Вес</div><div class="center sm">—</div></div>`;
+  }
+
+  // Day card
+  {
+    const stC=stress<=2?'#1B8A5A':stress<=3?'#E8943A':'#E8637A';
+    const dsC=dayScore>=4?'#1B8A5A':dayScore>=3?'#E8943A':'#E8637A';
+    const stN=clamp(Math.round(stress),0,5);
+    const dsN=clamp(Math.round(dayScore),0,5);
+    h+=`<div class="card"><div class="card-title">${fmtD(vd)}</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div class="tooltip-wrap" style="flex:1;text-align:center">
+          <div>😤</div><div class="xs">Стресс</div>
+          <div style="font-size:24px;font-weight:900;color:${stC}">${stN}</div>
+          ${tip(stress,3,'баллов',false)}</div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div class="tooltip-wrap" style="flex:1;text-align:center">
+          <div>⭐</div><div class="xs">День</div>
+          <div style="font-size:24px;font-weight:900;color:${dsC}">${dsN}</div>
+          ${tip(dayScore,5,'баллов',true)}</div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="flex:1;min-width:60px;text-align:center"><div>💊</div><div class="xs">Магний</div>
+          <div style="font-size:16px;font-weight:800;color:${magOk?'#1B8A5A':'#E8637A'}">${magOk?'✓':'✗'}</div>
+          <div class="xs">${magStreak}д подряд</div></div>
+        <div class="tooltip-wrap" style="flex:1;min-width:60px;text-align:center"><div>🍽️</div><div class="xs">Приёмы</div>
+          <div style="font-size:16px;font-weight:800;color:${cGBP(mealTypes.size>=3,mealTypes.size>=2)}">${mealTypes.size}</div>
+          ${tip(mealTypes.size,3,'приёмов',true)}</div>
+        <div style="flex:1;min-width:60px;text-align:center"><div>🏋️</div><div class="xs">Тренировка</div>
+          <div style="font-size:16px;font-weight:800;color:${todayTrainMin?'#1B8A5A':'#8C857A'}">${todayTrainMin?todayTrainMin+' мин':'—'}</div></div>
+      </div></div>`;
+  }
+
+  // Mood
+  {
+    const mC=cVal(mAvg/5),eC=cVal(eAvg/5);
+    h+=`<div class="card"><div class="card-title">Самочувствие · 7д</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:24px">${mAvg>=4?'😊':mAvg>=3?'😐':'😔'}</div>
+        <div class="tooltip-wrap" style="flex:1"><div class="hab-lbl">Настроение</div>
+          <div class="mid" style="color:${mC}">${fmt(mAvg)}<span class="xs"> /5</span></div>
+          <div class="bar-bg"><div class="bar" style="width:${(mAvg/5*100).toFixed(0)}%;background:${mC}"></div></div>
+          ${tip(mAvg,5,'баллов',true)}</div></div>
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:24px">${eAvg>=4?'⚡':eAvg>=3?'🔋':'🪫'}</div>
+        <div class="tooltip-wrap" style="flex:1"><div class="hab-lbl">Энергия</div>
+          <div class="mid" style="color:${eC}">${fmt(eAvg)}<span class="xs"> /5</span></div>
+          <div class="bar-bg"><div class="bar" style="width:${(eAvg/5*100).toFixed(0)}%;background:${eC}"></div></div>
+          ${tip(eAvg,5,'баллов',true)}</div></div></div>`;
+  }
+  h+=`</div>`;
+
+  // Weight chart
+  if(W.length>1){
+    const mn=Math.min(...W.map(r=>r.w)),mx=Math.max(...W.map(r=>r.w)),rg=mx-mn||1;
+    const SW=500,SH=70;
+    const pts=W.map((r,i)=>`${(i/(W.length-1)*SW).toFixed(1)},${(SH-(r.w-mn)/rg*SH).toFixed(1)}`).join(' ');
+    h+=`<div class="card" style="margin-top:12px"><div class="card-title">📈 Динамика веса</div>
+      <svg viewBox="-5 -5 ${SW+10} ${SH+10}" style="width:100%;height:auto;display:block">
+        <defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#1B8A5A"/><stop offset="100%" stop-color="#7C6FD4"/></linearGradient></defs>
+        <polyline points="${pts}" fill="none" stroke="url(#wg)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="flex-between sm" style="margin-top:6px">
+        <span>мин <b>${fmt(mn)}</b></span>
+        <span>сейчас <b style="color:#1B8A5A">${fmt(wL.w)}</b></span>
+        <span>макс <b>${fmt(mx)}</b></span>
+      </div></div>`;
+  }
+
+  // ── ПИТАНИЕ ──
+  h+=`<div class="section-title">🍽️ Питание</div><div class="row-1-2">`;
+
+  // КБЖУ ring + coffee
+  {
+    const calP=clamp(tK/G.kcal,0,1),r2=38,c2=2*Math.PI*r2;
+    let coffH='<div class="coffee-row">';
+    for(let i=0;i<5;i++)coffH+=`<div class="coffee-cup ${i<cc?'':'empty'}">☕</div>`;
+    coffH+='</div>';
+
+    h+=`<div class="card"><div class="card-title">КБЖУ</div>
+      <div class="tooltip-wrap" style="display:block">
+        <svg viewBox="0 0 100 100" style="width:86px;height:86px;display:block;margin:0 auto">
+          <circle cx="50" cy="50" r="${r2}" fill="none" stroke="#F0E6D8" stroke-width="6"/>
+          <circle cx="50" cy="50" r="${r2}" fill="none" stroke="${cVal(calP)}" stroke-width="6"
+            stroke-dasharray="${c2.toFixed(1)}" stroke-dashoffset="${(c2-c2*calP).toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 50 50)"/>
+          <text x="50" y="44" text-anchor="middle" fill="#2D2A24" font-size="15" font-weight="900">${tK}</text>
+          <text x="50" y="57" text-anchor="middle" fill="#8C857A" font-size="6" font-weight="700">из ${G.kcal}</text>
+        </svg>
+        ${tip(tK,G.kcal,'ккал',false)}
+      </div>
+      <div class="flex-around" style="margin-top:10px">
+        ${[['Б',tP,G.prot,'#1B8A5A','г белков'],['Ж',tF,G.fat,'#E8943A','г жиров'],['У',tCb,G.carb,'#7C6FD4','г углев.']].map(([l,v,g,col,unit])=>{
+          const p=clamp(v/g,0,1);
+          return`<div class="center tooltip-wrap">
+            <div style="font-size:10px;font-weight:800;color:${col}">${l}</div>
+            <div style="font-size:16px;font-weight:800;color:#2D2A24">${fmt(v)}</div>
+            <div class="bar-bg" style="width:44px;margin:4px auto"><div class="bar" style="width:${(p*100).toFixed(0)}%;background:${col}"></div></div>
+            <div class="xs">${g}г</div>
+            ${tip(v,g,unit,true)}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="divider"></div>
+      <div class="center xs">Кофе</div>${coffH}<div class="center xs">${cc}/5</div>
+    </div>`;
+  }
+
+  // Meal list
+  {
+    const ic={'Завтрак':'🌅','Обед':'☀️','Ужин':'🌙','Перекус':'🍎'};
+    h+=`<div class="card"><div class="card-title">Питание · ${fmtD(vd)}</div>
+      ${dM.length===0?'<div class="center sm">Нет данных</div>':
+        dM.map(m=>{
+          const kt=m.kcal!=null?m.kcal:'?';
+          const badge=m.mt==='manual'?'<span class="tag tag-manual">✏️</span>':
+            (m.mt&&m.mt!=='exact'?`<span class="tag tag-fuzzy">≈${m.mto}</span>`:'');
+          return`<div class="meal">
+            <div class="meal-icon">${ic[m.meal]||'🍽️'}</div>
+            <div style="flex:1"><div class="meal-name">${m.prod}${badge}</div>
+              <div class="meal-meta">${m.meal}·${m.g||0}г</div></div>
+            <div class="meal-kcal">${kt}</div></div>`;
+        }).join('')}
+      <div class="divider"></div>
+      <div class="center" style="font-size:15px;font-weight:900;color:#1B8A5A">Итого: ${tK} ккал</div>
+      ${miss.length?`<div style="margin-top:6px;padding:6px 10px;background:#FDE8EC;border-radius:8px;font-size:10px;color:#E8637A;font-weight:700;text-align:center">❌ ${miss.join(', ')}</div>`:''}</div>`;
+  }
+  h+=`</div>`;
+
+  // ── ПРИВЫЧКИ ──
+  h+=`<div class="section-title">✅ Привычки</div><div class="row-2">`;
+
+  {
+    const items=[
+      ['💧','Вода·7д',Math.round(avgWater)+' мл',avgWater>=G.water*.8,avgWater>=G.water*.6,avgWater/G.water,avgWater,G.water,'мл'],
+      ['😴','Сон·7д',fmt(avgSleep)+' ч',avgSleep>=7,avgSleep>=6,avgSleep/G.sleep,avgSleep,G.sleep,'ч'],
+      ['🏋️','Тренировки·28д',tCnt+' дн ('+Math.round(avgTrainMin)+' мин/тр)',tCnt>=12,tCnt>=8,tCnt/16,tCnt,12,'дней'],
+      ['🍷','Без алкоголя',noAlco+' дн',noAlco>=14,noAlco>=7,null,null,null,null],
+      ['🚬','Сигареты/день',fmt(avgCig),avgCig===0,avgCig<=1,null,null,null,null]
+    ];
+    h+=`<div class="card"><div class="card-title">Привычки</div>
+      ${items.map(([ic,lb,vl,g,o,p,val,goal,unit])=>{
+        const cl=cGBP(g,o);
+        return`<div class="hab tooltip-wrap"><div class="hab-icon">${ic}</div>
+          <div style="flex:1"><div class="hab-lbl">${lb}</div>
+            <div class="hab-val" style="color:${cl}">${vl}</div>
+            ${p!=null?`<div class="bar-bg"><div class="bar" style="width:${clamp(p*100,0,100).toFixed(0)}%;background:${cl}"></div></div>`:''}</div>
+          ${val!=null?tip(val,goal,unit,true):''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // Calendar
+  {
+    const yr=vd.getFullYear(),mo=vd.getMonth();
+    const sd=(new Date(yr,mo,1).getDay()+6)%7;
+    const dim=new Date(yr,mo+1,0).getDate();
+    const mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    let tM=0;
+    let cells=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>`<div class="cal-header">${d}</div>`).join('');
+    for(let i=0;i<sd;i++)cells+=`<div class="cal-cell cal-empty"></div>`;
+    for(let d=1;d<=dim;d++){
+      const dt=new Date(yr,mo,d);
+      const ok=aTD.has(dt.toDateString());
+      if(ok)tM++;
+      const isV=sameDay(dt,vd),isT=sameDay(dt,now);
+      const hE=H.find(r=>sameDay(r.date,dt)&&r.trainMin);
+      const ttl=hE?fmtD(dt)+' — '+hE.trainMin+' мин':fmtD(dt);
+      cells+=`<div class="cal-cell" style="background:${ok?'#1B8A5A':'#F0E6D8'};color:${ok?'white':'#8C857A'};${isV?'box-shadow:0 0 0 2.5px #E8637A;':isT?'box-shadow:0 0 0 2px #7C6FD4;':''}" title="${ttl}">${d}</div>`;
+    }
+    h+=`<div class="card"><div class="card-title">🏋️ ${mn[mo]} ${yr}</div>
+      <div class="cal-grid">${cells}</div>
+      <div class="center" style="margin-top:10px;font-size:14px">
+        <span style="color:#1B8A5A;font-weight:900">${tM}</span>
+        <span class="sm"> тренировок</span></div>
+      <div class="legend">
+        <span><span class="leg-box" style="background:#F0E6D8"></span>нет</span>
+        <span><span class="leg-box" style="background:#1B8A5A"></span>да</span>
+      </div></div>`;
+  }
+  h+=`</div>`;
+
+  // ── ФИНАНСЫ ──
+  h+=`<div class="section-title">💰 Финансы</div><div class="row-2">`;
+
+  // Month breakdown
+  {
+    h+=`<div class="card"><div class="card-title">За месяц · ${fmtMoney(Math.round(monthFTotal))} ₽</div>`;
+    if(catSorted.length===0){
+      h+=`<div class="center sm">Нет данных</div>`;
+    }else{
+      h+=`<div class="fin-bar">`;
+      catSorted.forEach(([cat,total])=>{
+        const pct=(total/monthFTotal*100).toFixed(1);
+        const ci=getCatStyle(cat);
+        h+=`<div style="width:${pct}%;background:${ci.color}" title="${cat}: ${fmtMoney(Math.round(total))} ₽"></div>`;
+      });
+      h+=`</div><div style="margin-top:10px">`;
+
+      catSorted.forEach(([cat,total])=>{
+        const ci=getCatStyle(cat);
+        const pct=Math.round(total/monthFTotal*100);
+        const isExp=expandedCat===cat;
+        const items=monthF.filter(r=>r.cat===cat);
+        const catEsc=cat.replace(/'/g,"\\'");
+
+        h+=`<div style="margin-bottom:2px">
+          <div onclick="toggleCat('${catEsc}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;border-radius:6px;${isExp?'background:'+ci.bg:''}">
+            <span style="font-size:14px">${ci.icon}</span>
+            <span class="fin-cat-badge" style="background:${ci.bg};color:${ci.color}">${cat}</span>
+            <span style="flex:1"></span>
+            <span style="font-weight:800;color:#2D2A24">${fmtMoney(Math.round(total))} ₽</span>
+            <span class="xs" style="width:30px;text-align:right">${pct}%</span>
+            <span style="font-size:10px;color:${ci.color};margin-left:4px">${isExp?'▲':'▼'}</span>
+          </div>`;
+
+        if(isExp){
+          h+=`<div style="padding:4px 0 8px 32px;font-size:12px">`;
+          items.forEach(r=>{
+            h+=`<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #F5F0E8">
+              <span style="color:#8C857A;font-size:10px;min-width:50px">${fmtD(r.date)}</span>
+              <span style="flex:1;font-weight:600">${r.desc||'—'}</span>
+              <span style="font-weight:700">${fmtMoney(Math.round(r.amount))} ₽</span>
+            </div>`;
+          });
+          h+=`</div>`;
+        }
+        h+=`</div>`;
+      });
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  }
+
+  // Day expenses
+  {
+    h+=`<div class="card"><div class="card-title">Расходы · ${fmtD(vd)} · ${fmtMoney(Math.round(dayFTotal))} ₽</div>`;
+    if(dayF.length===0){
+      h+=`<div class="center sm">Нет трат</div>`;
+    }else{
+      dayF.forEach(r=>{
+        const ci=getCatStyle(r.cat);
+        h+=`<div class="fin-row">
+          <span style="font-size:14px">${ci.icon}</span>
+          <span class="fin-cat-badge" style="background:${ci.bg};color:${ci.color}">${r.cat}</span>
+          <div style="flex:1"><div class="fin-desc">${r.desc||'—'}</div></div>
+          <div class="fin-amount">${fmtMoney(Math.round(r.amount))} ₽</div>
+        </div>`;
+      });
+    }
+    h+=`</div>`;
+  }
+
+  h+=`</div>`;
+
+  document.getElementById('app').innerHTML=h;
+}
+
+load();
+</script>
+</body>
+</html>
